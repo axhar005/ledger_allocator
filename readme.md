@@ -82,7 +82,7 @@ Include the header file in your code:
 
 Example:
 ---------------------------------------------------------
-```
+```c
 #include <stdio.h>
 #include "include/arena.h"
 
