@@ -50,8 +50,9 @@ typedef struct arena_t {
 // Metadata structure for each allocated block
 typedef struct {
 	u32 block_used; 			// Block status indicator: 1 if the block is used, 0 if free
-	u32 data_size; 				// Size of the data actually allocated by the user
+	u32 capacity; 				// Size of the data actually allocated by the user
 	u32 block_size; 			// Total size of the block, including the alignment
+	u32 lenght; 					// Current length of data stored in the block
 } metadata;
 
 /**
@@ -150,14 +151,28 @@ u64 arena_get_block_size(void *ptr);
  * @param ptr A pointer to the data portion of the memory block.
  * @param size The new data size to assign.
  */
-void arena_set_data_size(void *ptr, u32 size);
+void arena_set_capacity(void *ptr, u32 size);
 
 /**
  * Retrieves the data size of a memory block.
  * @param ptr A pointer to the data portion of the memory block.
  * @return The size of the data portion as an unsigned 64-bit integer.
  */
-u64 arena_get_data_size(void *ptr);
+u64 arena_get_capacity(void *ptr);
+
+/**
+ * Sets the current length of data stored in the block.
+ * @param ptr A pointer to the data portion of the memory block.
+ * @param lenght The new length to assign.
+ */
+void arena_set_lenght(void *ptr, u32 lenght);
+
+/**
+ * Retrieves the current length of data stored in the block.
+ * @param ptr A pointer to the data portion of the memory block.
+ * @return The current length of data as an unsigned 32-bit integer.
+ */
+u32 arena_get_lenght(void *ptr);
 
 /**
  * Prints the current state of the arena, including the proportion of free and used memory.

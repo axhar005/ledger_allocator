@@ -78,24 +78,39 @@ arena_set_block_size(void *ptr, u64 new_size) {
 }
 
 void
-arena_set_data_size(void *ptr, u32 size) {
+arena_set_capacity(void *ptr, u32 size) {
 	if (ptr == NULL) {
-		fprintf(stderr,"Error: Null pointer received in arena_set_data_size function.\n");
+		fprintf(stderr,"Error: Null pointer received in arena_set_capacity function.\n");
 		return;
 	}
 	metadata *meta = arena_get_block_metadata(ptr);
-	meta->data_size = size;
+	meta->capacity = size;
 }
 
 u64
-arena_get_data_size(void *ptr) {
+arena_get_capacity(void *ptr) {
 	if (ptr == NULL) {
-		fprintf(stderr, "Error: Null pointer received in arena_get_data_size function.\n");
+		fprintf(stderr, "Error: Null pointer received in arena_get_capacity function.\n");
 		return 0;
 	}
 	metadata *meta = arena_get_block_metadata(ptr);
-	return meta->data_size;
+	return meta->capacity;
 }
+
+void
+arena_set_lenght(void *ptr, u32 new_lenght) {
+	if (!ptr) return;
+	metadata *meta = arena_get_block_metadata(ptr);
+	if (new_lenght <= meta->capacity) {
+		meta->lenght = new_lenght;
+	}
+}
+
+u32
+arena_get_lenght(void *ptr) {
+	return ptr ? arena_get_block_metadata(ptr)->lenght : 0;
+}
+
 
 void
 arena_merge_free_blocks(Arena *arena) {
@@ -119,6 +134,10 @@ arena_merge_free_blocks(Arena *arena) {
 			u64 new_merged_size = block_size + next_block_size;
 			
 			arena_set_block_size(data_ptr, new_merged_size);
+
+			metadata *meta = arena_get_block_metadata(data_ptr);
+			meta->capacity = 0;
+			meta->lenght = 0;
 			
 			memset(next_block_ptr, 0, META_SIZE_ALIGNED);
 			
@@ -229,18 +248,20 @@ arena_alloc(Arena *arena, u64 size) {
 		if (free_block_size >= total_size + (META_SIZE_ALIGNED + ARENA_ALIGNMENT)) {
 			arena_set_block_size(free_data_ptr, total_size);
 			arena_set_block_used(free_data_ptr, true);
-			arena_set_data_size(free_data_ptr, (u32)size);
+			arena_set_capacity(free_data_ptr, (u32)size);
+			arena_set_lenght(free_data_ptr, 0);
 
-			u8 *next_ptr = (u8 *)free_block_ptr + total_size;
-			metadata *next_meta = (metadata *)next_ptr;
-			next_meta->block_size = free_block_size - total_size;
-			next_meta->block_used = 0;
-			next_meta->data_size = 0;
+			u8 *next_block_ptr = (u8 *)free_block_ptr + total_size;
+			void *next_data_ptr = next_block_ptr + META_SIZE_ALIGNED;
+			arena_set_block_size(next_data_ptr, (u32)(free_block_size - total_size));
+			arena_set_block_used(next_data_ptr, false);
+			arena_set_capacity(next_data_ptr, 0);
+			arena_set_lenght(next_data_ptr, 0);
 
 			target_arena->space -= total_size;
 		} else {
 			arena_set_block_used(free_data_ptr, true);
-			arena_set_data_size(free_data_ptr, (u32)size);
+			arena_set_capacity(free_data_ptr, (u32)size);
 			target_arena->space -= free_block_size;
 		}
 		return free_data_ptr;
@@ -259,14 +280,13 @@ arena_alloc(Arena *arena, u64 size) {
 	}
 
 	u8 *block_ptr = arena->memory + current_offset;
-	metadata *meta = (metadata *)block_ptr;
-	
-	meta->block_size = total_size;
-	meta->block_used = 1;
-	meta->data_size = (u32)size;
-
 	void *data_ptr = block_ptr + META_SIZE_ALIGNED;
 	
+	arena_set_block_size(data_ptr, (u32)total_size);
+	arena_set_block_used(data_ptr, true);
+	arena_set_capacity(data_ptr, (u32)size);
+	arena_set_lenght(data_ptr, 0);
+
 	arena->offset = current_offset + total_size;
 	arena->space = arena->size - arena->offset;
 
@@ -291,12 +311,16 @@ arena_realloc(Arena *arena, void *ptr, u64 new_size) {
 	}
 
 	metadata *meta = arena_get_block_metadata(ptr);
-	u64 old_data_size = meta->data_size;
+	u32 old_lenght = meta->lenght;
+	u64 old_capacity = meta->capacity;
 	u64 current_total_block_size = meta->block_size;
 	u64 needed_total_size = ARENA_ALIGN_UP(new_size + META_SIZE_ALIGNED);
 
 	if (needed_total_size <= current_total_block_size) {
-		meta->data_size = (u32)new_size;
+		arena_set_capacity(ptr, (u32)new_size);
+		if (meta->lenght > meta->capacity) {
+			meta->lenght = meta->capacity;
+		}
 		return ptr;
 	}
 
@@ -306,8 +330,8 @@ arena_realloc(Arena *arena, void *ptr, u64 new_size) {
 		if (current_arena->offset + extra_needed <= current_arena->size) {
 			current_arena->offset += extra_needed;
 			current_arena->space -= extra_needed;
-			meta->block_size = needed_total_size;
-			meta->data_size = (u32)new_size;
+			arena_set_block_size(ptr, needed_total_size);
+			arena_set_capacity(ptr, (u32)new_size);
 			return ptr;
 		}
 	}
@@ -317,8 +341,10 @@ arena_realloc(Arena *arena, void *ptr, u64 new_size) {
 		if (!next_meta->block_used && (current_total_block_size + next_meta->block_size) >= needed_total_size) {
 			u64 combined_size = current_total_block_size + next_meta->block_size;
 			
-			meta->block_size = combined_size;
-			meta->data_size = (u32)new_size;
+			arena_set_block_size(ptr, combined_size);
+			arena_set_capacity(ptr, (u32)new_size);
+
+			if (meta->lenght > meta->capacity) meta->lenght = meta->capacity;
 			
 			current_arena->space -= next_meta->block_size;
 			
@@ -330,8 +356,10 @@ arena_realloc(Arena *arena, void *ptr, u64 new_size) {
 
 	void *new_ptr = arena_alloc(arena, new_size);
 	if (new_ptr) {
-		u64 copy_size = (old_data_size < new_size) ? old_data_size : new_size;
+		u64 copy_size = (old_capacity < new_size) ? old_capacity : new_size;
 		memcpy(new_ptr, ptr, copy_size);
+		metadata *new_meta = arena_get_block_metadata(new_ptr);
+		new_meta->lenght = (old_lenght < (u32)new_size) ? old_lenght : (u32)new_size;
 		arena_free(arena, ptr);
 	}
 	
@@ -350,8 +378,9 @@ arena_free(Arena *arena, void *ptr) {
 		return;
 	}
 	u64 block_size = arena_get_block_size(ptr);
-	arena_set_data_size(ptr, 0);
+	arena_set_capacity(ptr, 0);
 	arena_set_block_used(ptr, false);
+	arena_set_lenght(ptr, 0);
 	memset(ptr, 0, block_size - META_SIZE_ALIGNED);
 	current_arena->space += block_size;
 	current_arena->free_count++;
@@ -398,9 +427,9 @@ arena_print(Arena *arena, bool content) {
 			void *block_ptr = (u8 *)arena->memory + offset;
 			void *data_ptr = (u8 *)block_ptr + META_SIZE_ALIGNED;
 			u64 block_size = arena_get_block_size(data_ptr);
-			u64 data_size = arena_get_data_size(data_ptr);
+			u64 capacity = arena_get_capacity(data_ptr);
 			bool free = arena_is_block_free(data_ptr);
-			printf("| Block at %p: data_size = %llu, block_size = %llu, block_status = %s, content = ", block_ptr, data_size, block_size, free ? "free" : "used");
+			printf("| Block at %p: capacity = %llu, block_size = %llu, block_status = %s, content = ", block_ptr, capacity, block_size, free ? "free" : "used");
 			for (u64 i = 0; i < block_size - META_SIZE_ALIGNED; i++) {
 				printf("%02x ", ((u8 *)data_ptr)[i]);
 			}
