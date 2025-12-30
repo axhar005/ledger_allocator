@@ -413,14 +413,14 @@ arena_reset(Arena *arena) {
 void
 arena_print(Arena *arena, bool content) {
 	u64 used_bytes = arena->size - arena->space; // Calcul correct
-    f32 free_percent = (arena->space * 100.0) / arena->size;
-    f32 used_percent = 100.0 - free_percent;
+	f32 free_percent = (arena->space * 100.0) / arena->size;
+	f32 used_percent = 100.0 - free_percent;
 
-    printf("|-------------->>>\n");
-    printf("| Arena -> %p:\n", arena);
-    printf("| Size: %llu\n", arena->size);
-    printf("| Free: %llu byte Used: %llu byte\n", arena->space, used_bytes);
-    printf("| Free: %.4f%% Used: %.4f%%\n", free_percent, used_percent);
+	printf("|-------------->>>\n");
+	printf("| Arena -> %p:\n", arena);
+	printf("| Size: %llu\n", arena->size);
+	printf("| Free: %llu byte Used: %llu byte\n", arena->space, used_bytes);
+	printf("| Free: %.4f%% Used: %.4f%%\n", free_percent, used_percent);
 	if (content){
 		u64 offset = 0;
 		while (offset < arena->offset) {

@@ -85,7 +85,7 @@ Example:
 ```c
 #include <stdio.h>
 #include <string.h>
-#include "include/arena.h"
+#include "../include/arena.h"
 
 int main() {
     printf("=== Arena Allocator: Notebook Edition Demo ===\n\n");
