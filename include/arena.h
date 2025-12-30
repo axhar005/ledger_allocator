@@ -10,15 +10,18 @@
 # include <errno.h>
 # include <limits.h>
 
-# define MAX_ARENA_SIZE  1024 * 1024 * 1					// 1 MB
+# define ARENA_SIZE 1024 * 1024 * 1															// 1 MB
 
-# define ARENA_ALIGNMENT 16									// 8 or 16 bytes
+# define ARENA_ALIGNMENT 16																		// 8 or 16 bytes
 
-# define ARENA_ALIGN_UP(size) (((size) + ((ARENA_ALIGNMENT) - 1)) & ~((ARENA_ALIGNMENT) - 1))
+# define ARENA_ALIGN_UP(size) (((size) + ((ARENA_ALIGNMENT) - 1)) & ~((ARENA_ALIGNMENT) - 1))	// Align size up to the nearest multiple of ARENA_ALIGNMENT
 
-# define MAX_FREE_COUNT  10									// Max free count before arena_merge_free_blocks()
+# define META_SIZE_ALIGNED ARENA_ALIGN_UP(sizeof(metadata)) 									// Aligned size of metadata
 
-# define MAX_BLOCK_SIZE ((1U << 31) - 1)					// Max unsigned int 31 bits size
+# define MAX_FREE_COUNT 10																		// Max free count before arena_merge_free_blocks()
+
+# define MAX_BLOCK_SIZE UINT32_MAX																// Max unsigned int 32 bits size
+
 
 // Data types
 typedef uint8_t		u8;
@@ -44,10 +47,11 @@ typedef struct arena_t {
 	struct arena_t	*child;		// Pointer to a child arena in case of overflow
 } Arena;
 
+// Metadata structure for each allocated block
 typedef struct {
-	u32 data_size;				// Size of the data actually allocated by the user
-	u32 block_used : 1;			// Block status indicator: 1 if the block is used, 0 if free
-	u32 block_size : 31;		// Total size of the block, including the alignment
+	u32 block_used; 			// Block status indicator: 1 if the block is used, 0 if free
+	u32 data_size; 				// Size of the data actually allocated by the user
+	u32 block_size; 			// Total size of the block, including the alignment
 } metadata;
 
 /**
@@ -64,6 +68,15 @@ Arena* arena_create(u64 size);
  * @return A pointer to the allocated block.
  */
 void* arena_alloc(Arena *arena, u64 size);
+
+/**
+ * Reallocates a previously allocated block to a new size.
+ * @param arena A pointer to the arena.
+ * @param ptr A pointer to the previously allocated block.
+ * @param new_size The new size for the block in bytes.
+ * @return A pointer to the reallocated block.
+ */
+void* arena_realloc(Arena *arena, void *ptr, u64 new_size);
 
 /**
  * Frees a previously allocated block of memory.
@@ -145,13 +158,6 @@ void arena_set_data_size(void *ptr, u32 size);
  * @return The size of the data portion as an unsigned 64-bit integer.
  */
 u64 arena_get_data_size(void *ptr);
-
-/**
- * Retrieves the string size of a memory block.
- * @param ptr A pointer to the data portion of the memory block.
- * @return The size of the string as an unsigned 64-bit integer.
- */
-u64 arena_strlen(void *ptr);
 
 /**
  * Prints the current state of the arena, including the proportion of free and used memory.

@@ -32,8 +32,8 @@ Here is a simple example to demonstrate how to use the Arena Allocator:
 #include "arena.h"
 
 int main() {
-    // Create an arena with a maximum size of 1 MB
-    Arena *arena = arena_create(MAX_ARENA_SIZE);
+    // Create an arena with a size of 1 MB
+    Arena *arena = arena_create(ARENA_SIZE);
     if (!arena)
     	return 1;
 
