@@ -1,4 +1,4 @@
-# Ledger Allocator (Notebook Edition)
+# Ledger Allocator
 
 ## Overview
 Ledger Allocator is a high-performance memory management library utilizing an arena-based allocation strategy with a unique Notebook architecture. 

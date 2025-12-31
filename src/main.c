@@ -3,9 +3,9 @@
 #include "../include/ledger.h"
 
 int main() {
-    printf("=== Ledger Allocator: Notebook Edition Demo ===\n\n");
+    printf("=== Ledger Allocator: Ledger Edition Demo ===\n\n");
 
-    // 1. Initialize the Notebook with a small page (1KB)
+    // 1. Initialize the Ledger with a small page (1KB)
     // We use a small size to easily demonstrate the "Page Turning" (Child creation)
     Ledger *nb = ledger_create(1024); 
     if (!nb) {
@@ -19,7 +19,7 @@ int main() {
     if (entry1) {
         strcpy(entry1, "Learning C at 42 is challenging but fun!");
         
-        // Use helper functions to manage the "Notebook" entry
+        // Use helper functions to manage the "Ledger" entry
         ledger_set_lenght(entry1, (u32)strlen(entry1));
         
         printf("  Data: %s\n", entry1);
@@ -40,7 +40,7 @@ int main() {
     printf("[Step 3] Turning the Page (Overflow to Child Ledger)\n");
     void *huge_entry = ledger_alloc(nb, 2048);
     if (huge_entry) {
-        printf("  Successfully allocated 2KB. The Notebook automatically added a child page!\n\n");
+        printf("  Successfully allocated 2KB. The Ledger automatically added a child page!\n\n");
     }
 
     // 5. Freeing and Memory Management
@@ -50,12 +50,12 @@ int main() {
     printf("  Block freed. If enough frees occur, adjacent blocks will merge.\n\n");
 
     // 6. Detailed Introspection
-    printf("[Step 5] Final Notebook Inspection\n");
+    printf("[Step 5] Final Ledger Inspection\n");
     // This prints the status of all blocks in all pages (Used/Free, Capacity, Length, Hex)
     ledger_print_child(nb, false); 
 
-    // 7. Shred the Notebook
-    printf("Closing the notebook and freeing all system memory...\n");
+    // 7. Shred the Ledger
+    printf("Closing the Ledger and freeing all system memory...\n");
     ledger_delete(nb);
 
     return 0;

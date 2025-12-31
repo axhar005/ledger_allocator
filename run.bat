@@ -1,5 +1,5 @@
 @echo off
-set EXE_PATH=build\bin\arena.exe
+set EXE_PATH=build\bin\ledger.exe
 
 if exist %EXE_PATH% (
     echo [!] Lancement du programme...
