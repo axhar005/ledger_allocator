@@ -15,16 +15,16 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 include_directories(include)
 
 # Librairie statique
-add_library(arena_lib STATIC src/arena.c)
-set_target_properties(arena_lib PROPERTIES OUTPUT_NAME "arena")
+add_library(ledger_lib STATIC src/ledger.c)
+set_target_properties(ledger_lib PROPERTIES OUTPUT_NAME "ledger")
 
 # Exécutable
-add_executable(arena_exe 
+add_executable(ledger_exe 
     src/main.c
-    src/arena.c
+    src/ledger.c
 )
 
-set_target_properties(arena_exe PROPERTIES OUTPUT_NAME "arena")
+set_target_properties(ledger_exe PROPERTIES OUTPUT_NAME "ledger")
 
 # Linkage
-target_link_libraries(arena_exe PRIVATE arena_lib)
+target_link_libraries(ledger_exe PRIVATE ledger_lib)

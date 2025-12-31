@@ -16,4 +16,4 @@ cmake --build .
 cd ..
 echo.
 echo [+] Build termine avec succes !
-pause
+exit

@@ -1,5 +1,5 @@
 #--- LIBRARY NAME ---#
-NAME = arena
+NAME = ledger
 LIB_NAME = lib$(NAME).a
 
 #--- COMMAND VARIABLES ---#
@@ -22,7 +22,7 @@ LIB_SUCCESS := "$(GREEN)[+] $(LIB_NAME) Successfully Compiled!$(RESET)"
 
 #--- SOURCES ---#
 SRC_EXEC = main.c
-SRC_LIB = arena.c
+SRC_LIB = ledger.c
 SRCDIR = src
 INCDIR = include
 OBJDIR = object

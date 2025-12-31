@@ -9,4 +9,4 @@ if exist %EXE_PATH% (
 ) else (
     echo [!] Erreur : binaire introuvable. Executez build.bat.
 )
-pause
+exit
