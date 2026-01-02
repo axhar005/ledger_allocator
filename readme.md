@@ -1,23 +1,27 @@
 # Ledger Allocator
 
 ## Overview
-Ledger Allocator is a high-performance memory management library utilizing an arena-based allocation strategy with a unique Notebook architecture. 
 
-Unlike traditional linear allocators, it manages memory in "pages" (child ledgers). When a page is full, it automatically "turns the page" by creating a new, larger page. It balances the extreme speed of an arena with the flexibility of a free-list, allowing for individual block deallocation, smart reallocation, and fragmentation reduction.
+Ledger Allocator is a custom memory tracking and management system designed to give developers full control over their data's lifecycle. Instead of dealing with "blind" pointers, this system treats memory as a series of "Smart Entries" where metadata—such as capacity and current length—is stored directly alongside the raw data.
 
+The Ledger Allocator is essentially a hybrid system: it is built upon the speed of an Arena Allocator, integrated with classic memory management functions (alloc, free, realloc), and features a Chaining system where each overflow creates a child Ledger that is always 2x larger than the previous one.
 
+This approach eliminates the need for constant manual tracking or expensive operations like `strlen()`. By embedding the state within the allocation itself, the Ledger Allocator acts as a "Memory Diary": every entry knows its own limits, and every "Page" (Ledger) is linked to the next through an automated chaining system, ensuring you never lose grip on your program's heap.
 
 ## Features
-* The Ledger Strategy: Automatic chaining of child ledgers to handle overflow seamlessly.
-* Efficient Allocation: Quick O(1) allocation and deallocation within the current memory offset.
-* Fragmentation Reduction: Automatically merges adjacent free blocks after reaching MAX_FREE_COUNT.
-* SIMD Ready: Guaranteed 16-byte alignment for high-performance data structures.
-* Smart Realloc: In-place block expansion when adjacent memory is free or at the ledger boundary.
-* Lightweight: Minimal memory overhead with a simple, clean C API.
+
+* **Embedded Metadata Tracking:** Every block stores its own `capacity` and `length`. This allows you to retrieve data size or string length in O(1) time without extra calculations or external variables.
+* **Automated Memory Chaining:** If a Ledger exceeds its initial size, the system automatically allocates and links a "child" Ledger. Your allocations continue seamlessly across a linked list of memory segments.
+* **16-Byte Data Alignment:** Built-in alignment logic ensures all user data is optimized for modern CPU architectures and safe for all data types.
+* **Smart Reallocation:** The `realloc` engine attempts to expand blocks in-place by checking the remaining ledger offset or merging with adjacent free blocks before deciding to move data.
+* **Fragmentation Recovery:** Includes a block-merging (coalescence) algorithm that scans and fuses adjacent free fragments into larger reusable spaces after a set number of frees.
+* **Zero-Fill Security:** All freed memory is automatically cleared (memset to zero), preventing data leakage and making memory debugging significantly easier.
+* **Full Chain Introspection:** Built-in printing functions allow you to inspect every block, across every linked ledger, with hex-dump previews of the content.
+
 
 ## Memory Visualization
 
-### 🏗️ Block Structure (The "Notebook" Entry)
+### 🏗️ Block Structure (The "Ledger" Entry)
 Each allocation is composed of a metadata header followed by 16-byte aligned user data.
 ```
 
@@ -30,7 +34,7 @@ Each allocation is composed of a metadata header followed by 16-byte aligned use
 ```
 
 ### 📖 The Notebook Concept (Chaining)
-When a "page" (ledger) is full, a new, larger page is automatically linked.
+When a "page" (Ledger) is full, a new, larger page is automatically linked.
 ```
   PAGE 1 (Current)          PAGE 2 (Child)            PAGE 3 (Child)
 +-------------------+     +-------------------+     +-------------------+
