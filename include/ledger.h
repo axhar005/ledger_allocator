@@ -68,7 +68,7 @@ Ledger* ledger_create(u64 size);
  * @param size The size of the block to allocate in bytes.
  * @return A pointer to the allocated block.
  */
-void* ledger_alloc(Ledger *ledger, u64 size);
+void* ledger_alloc(Ledger *ledger, u32 size);
 
 /**
  * Reallocates a previously allocated block to a new size.
@@ -77,7 +77,7 @@ void* ledger_alloc(Ledger *ledger, u64 size);
  * @param new_size The new size for the block in bytes.
  * @return A pointer to the reallocated block.
  */
-void* ledger_realloc(Ledger *ledger, void *ptr, u64 new_size);
+void* ledger_realloc(Ledger *ledger, void *ptr, u32 new_size);
 
 /**
  * Frees a previously allocated block of memory.
@@ -98,15 +98,23 @@ void ledger_reset(Ledger *ledger);
 void ledger_delete(Ledger *ledger);
 
 /**
+ * Checks if a given pointer belongs to the ledger or its child ledgers.
+ * @param ledger A pointer to the ledger.
+ * @param data_ptr A pointer to check.
+ * @return A pointer to the ledger containing the pointer, or NULL if not found.
+ */
+Ledger *ledger_contains_this_ptr(Ledger *ledger, void *data_ptr);
+
+/**
  * Finds a free block of sufficient size in the ledger.
  * @param ledger A pointer to the ledger.
  * @param size The size of the block to find in bytes.
  * @return A pointer to the found free block, or NULL if no free block is found.
  */
-void* ledger_find_free_block(Ledger *ledger, u64 size);
+void* ledger_find_free_block(Ledger *ledger, u32 size);
 
 /**
- *Mmerges adjacent free blocks in the ledger into a single larger block.
+ * Merges adjacent free blocks in the ledger into a single larger block.
  * @param ledger A pointer to the ledger.
  */
 void ledger_merge_free_blocks(Ledger *ledger);
@@ -137,14 +145,14 @@ void ledger_set_block_used(void *ptr, bool used);
  * @param ptr A pointer to the data portion of the memory block.
  * @param new_size The new size to assign to the block.
  */
-void ledger_set_block_size(void *ptr, u64 new_size);
+void ledger_set_block_size(void *ptr, u32 new_size);
 
 /**
  * Gets the size of an allocated block of memory.
  * @param ptr A pointer to the data portion of the memory block
  * @return The size of the block in bytes.
  */
-u64 ledger_get_block_size(void *ptr);
+u32 ledger_get_block_size(void *ptr);
 
 /**
  * Sets the data size of a memory block.
@@ -158,7 +166,7 @@ void ledger_set_capacity(void *ptr, u32 size);
  * @param ptr A pointer to the data portion of the memory block.
  * @return The size of the data portion as an unsigned 64-bit integer.
  */
-u64 ledger_get_capacity(void *ptr);
+u32 ledger_get_capacity(void *ptr);
 
 /**
  * Sets the current length of data stored in the block.
@@ -188,5 +196,10 @@ void ledger_print(Ledger *ledger, bool content);
  */
 void ledger_print_child(Ledger *ledger, bool content);
 
-#endif
+/**
+ * Dumps the entire ledger structure, including all blocks and their metadata.
+ * @param ledger A pointer to the ledger.
+ */
+void ledger_dump(Ledger *ledger);
 
+#endif

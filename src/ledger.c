@@ -34,7 +34,7 @@ ledger_get_block_metadata(void *ptr) {
 	return (metadata *)((u8 *)ptr - META_SIZE_ALIGNED);
 }
 
-u64
+u32
 ledger_get_block_size(void *ptr) {
 	if (ptr == NULL) {
 		fprintf(stderr, "Error: Null pointer received in ledger_get_block_size function.\n");
@@ -68,7 +68,7 @@ ledger_set_block_used(void *ptr, bool used) {
 }
 
 void
-ledger_set_block_size(void *ptr, u64 new_size) {
+ledger_set_block_size(void *ptr, u32 new_size) {
 	if (ptr == NULL) {
 		fprintf(stderr, "Error: Null pointer received in ledger_set_block_size function.\n");
 		return;
@@ -87,7 +87,7 @@ ledger_set_capacity(void *ptr, u32 size) {
 	meta->capacity = size;
 }
 
-u64
+u32
 ledger_get_capacity(void *ptr) {
 	if (ptr == NULL) {
 		fprintf(stderr, "Error: Null pointer received in ledger_get_capacity function.\n");
@@ -188,15 +188,15 @@ ledger_create(u64 size) {
 }
 
 void *
-ledger_find_free_block(Ledger *ledger, u64 size) {
+ledger_find_free_block(Ledger *ledger, u32 size) {
 	Ledger *current = ledger;
 
 	while (current != NULL) {
-		u64 offset = 0;
+		u32 offset = 0;
 		while (offset < current->offset) {
 			u8 *block_ptr = current->memory + offset;
 			void *data_ptr = block_ptr + META_SIZE_ALIGNED;
-			u64 block_size = ledger_get_block_size(data_ptr);
+			u32 block_size = ledger_get_block_size(data_ptr);
 
 			if (ledger_is_block_free(data_ptr) && block_size >= size) {
 				return block_ptr; 
@@ -211,7 +211,7 @@ ledger_find_free_block(Ledger *ledger, u64 size) {
 }
 
 void *
-ledger_alloc(Ledger *ledger, u64 size) {
+ledger_alloc(Ledger *ledger, u32 size) {
 	if (!ledger) {
 		fprintf(stderr, "Error: invalid ledger ptr for aalloc.\n");
 		return NULL;
@@ -221,13 +221,14 @@ ledger_alloc(Ledger *ledger, u64 size) {
 		return NULL;
 	}
 
-	u64 total_size = LEDGER_ALIGN_UP(size + META_SIZE_ALIGNED);
+	u32 total_size = LEDGER_ALIGN_UP(size + META_SIZE_ALIGNED);
 
 	if (total_size > MAX_BLOCK_SIZE) {
 		fprintf(stderr, "Error: Block size exceeds the maximum allowable size.\n");
 		return NULL;
 	}
 
+	// child ledger allocation
 	if (total_size > ledger->size) {
 		if (ledger->child) {
 			return ledger_alloc(ledger->child, size);
@@ -243,7 +244,7 @@ ledger_alloc(Ledger *ledger, u64 size) {
 		Ledger *target_ledger = ledger_contains_this_ptr(ledger, free_block_ptr);
 		if (!target_ledger) return NULL;
 		void *free_data_ptr = (u8 *)free_block_ptr + META_SIZE_ALIGNED;
-		u64 free_block_size = ledger_get_block_size(free_data_ptr);
+		u32 free_block_size = ledger_get_block_size(free_data_ptr);
 
 		if (free_block_size >= total_size + (META_SIZE_ALIGNED + LEDGER_ALIGNMENT)) {
 			ledger_set_block_size(free_data_ptr, total_size);
@@ -264,10 +265,11 @@ ledger_alloc(Ledger *ledger, u64 size) {
 			ledger_set_capacity(free_data_ptr, (u32)size);
 			target_ledger->space -= free_block_size;
 		}
+		memset(free_data_ptr, 0, free_block_size - META_SIZE_ALIGNED);
 		return free_data_ptr;
 	}
 
-	u64 current_offset = LEDGER_ALIGN_UP(ledger->offset);
+	u32 current_offset = LEDGER_ALIGN_UP(ledger->offset);
 
 	if (current_offset + total_size > ledger->size) {
 		if (ledger->child) {
@@ -294,7 +296,7 @@ ledger_alloc(Ledger *ledger, u64 size) {
 }
 
 void *
-ledger_realloc(Ledger *ledger, void *ptr, u64 new_size) {
+ledger_realloc(Ledger *ledger, void *ptr, u32 new_size) {
 	if (!ledger) return NULL;
 	
 	if (!ptr) return ledger_alloc(ledger, new_size);
@@ -312,9 +314,9 @@ ledger_realloc(Ledger *ledger, void *ptr, u64 new_size) {
 
 	metadata *meta = ledger_get_block_metadata(ptr);
 	u32 old_lenght = meta->lenght;
-	u64 old_capacity = meta->capacity;
-	u64 current_total_block_size = meta->block_size;
-	u64 needed_total_size = LEDGER_ALIGN_UP(new_size + META_SIZE_ALIGNED);
+	u32 old_capacity = meta->capacity;
+	u32 current_total_block_size = meta->block_size;
+	u32 needed_total_size = LEDGER_ALIGN_UP(new_size + META_SIZE_ALIGNED);
 
 	if (needed_total_size <= current_total_block_size) {
 		ledger_set_capacity(ptr, (u32)new_size);
@@ -326,7 +328,7 @@ ledger_realloc(Ledger *ledger, void *ptr, u64 new_size) {
 
 	u8 *block_end = (u8 *)meta + current_total_block_size;
 	if (block_end == (current_ledger->memory + current_ledger->offset)) {
-		u64 extra_needed = needed_total_size - current_total_block_size;
+		u32 extra_needed = needed_total_size - current_total_block_size;
 		if (current_ledger->offset + extra_needed <= current_ledger->size) {
 			current_ledger->offset += extra_needed;
 			current_ledger->space -= extra_needed;
@@ -339,7 +341,7 @@ ledger_realloc(Ledger *ledger, void *ptr, u64 new_size) {
 	if (block_end < (current_ledger->memory + current_ledger->offset)) {
 		metadata *next_meta = (metadata *)block_end;
 		if (!next_meta->block_used && (current_total_block_size + next_meta->block_size) >= needed_total_size) {
-			u64 combined_size = current_total_block_size + next_meta->block_size;
+			u32 combined_size = current_total_block_size + next_meta->block_size;
 			
 			ledger_set_block_size(ptr, combined_size);
 			ledger_set_capacity(ptr, (u32)new_size);
@@ -356,7 +358,7 @@ ledger_realloc(Ledger *ledger, void *ptr, u64 new_size) {
 
 	void *new_ptr = ledger_alloc(ledger, new_size);
 	if (new_ptr) {
-		u64 copy_size = (old_capacity < new_size) ? old_capacity : new_size;
+		u32 copy_size = (old_capacity < new_size) ? old_capacity : new_size;
 		memcpy(new_ptr, ptr, copy_size);
 		metadata *new_meta = ledger_get_block_metadata(new_ptr);
 		new_meta->lenght = (old_lenght < (u32)new_size) ? old_lenght : (u32)new_size;
@@ -377,11 +379,10 @@ ledger_free(Ledger *ledger, void *ptr) {
 		fprintf(stderr, "Error: Pointer does not belong to this ledger chain.\n");
 		return;
 	}
-	u64 block_size = ledger_get_block_size(ptr);
+	u32 block_size = ledger_get_block_size(ptr);
 	ledger_set_capacity(ptr, 0);
 	ledger_set_block_used(ptr, false);
 	ledger_set_lenght(ptr, 0);
-	memset(ptr, 0, block_size - META_SIZE_ALIGNED);
 	current_ledger->space += block_size;
 	current_ledger->free_count++;
 	if (current_ledger->free_count == MAX_FREE_COUNT) {
@@ -412,7 +413,7 @@ ledger_reset(Ledger *ledger) {
 
 void
 ledger_print(Ledger *ledger, bool content) {
-	u64 used_bytes = ledger->size - ledger->space; // Calcul correct
+	u64 used_bytes = ledger->size - ledger->space;
 	f32 free_percent = (ledger->space * 100.0) / ledger->size;
 	f32 used_percent = 100.0 - free_percent;
 
@@ -447,4 +448,66 @@ void ledger_print_child(Ledger *ledger, bool content) {
 		next = next->child;
 		ledger_print(next, content);
 	}
+}
+
+void ledger_dump(Ledger *ledger) {
+	if (!ledger) return;
+
+	Ledger *current = ledger;
+	int depth = 0;
+
+	while (current) {
+		if (depth == 0) {
+			printf("\n==================== LEDGER: MASTER (@%p) ====================\n", (void*)current);
+		} else {
+			printf("\n==================== LEDGER: CHILD %d (@%p) ====================\n", depth, (void*)current);
+		}
+		
+		printf(" STAT |  CAP  |  B_SZ |  LEN  | ADDRESS          | DATA (Hex Preview)\n");
+		printf("------+-------+-------+-------+------------------+-------------------------\n");
+
+		u64 current_offset = 0;
+		while (current_offset < current->offset) {
+			u8 *block_base = current->memory + current_offset;
+			void *data_ptr = block_base + META_SIZE_ALIGNED;
+			
+			metadata *meta = ledger_get_block_metadata(data_ptr);
+			if (!meta || meta->block_size == 0) break;
+
+			bool is_free = (meta->block_used == 0);
+
+			printf("  [%c] | %5u | %5u | %5u | %p | ", 
+				is_free ? 'F' : 'U', 
+				meta->capacity, 
+				meta->block_size, 
+				meta->lenght,
+				data_ptr);
+
+			u8 *d = (u8 *)data_ptr;
+			u32 data_limit = meta->block_size - (u32)META_SIZE_ALIGNED;
+			for (u32 i = 0; i < 12; i++) {
+				if (i < data_limit) {
+					printf("%02x ", d[i]);
+				} else {
+					printf("   ");
+				}
+			}
+			printf("\n");
+
+			current_offset += meta->block_size;
+		}
+
+		f32 usage_pct = (f32)(current->size - current->space) / (f32)current->size * 100.0f;
+		printf("------+-------+-------+-------+------------------+-------------------------\n");
+		printf(" PAGE USAGE: %6.2f%% | SIZE: %7llu | SPACE: %7llu\n", 
+			usage_pct, current->size, current->space);
+
+		if (current->child) {
+			printf("\n          ||\n          \\/ (Next Linked Page)\n");
+		}
+		
+		current = current->child;
+		depth++;
+	}
+	printf("=====================================================================\n\n");
 }
