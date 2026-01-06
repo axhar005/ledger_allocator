@@ -65,14 +65,6 @@ typedef struct {
  */
 Ledger* ledger_create(u64 size);
 
-/**
- * Allocates a block of memory of the specified size in the ledger.
- * @param ledger A pointer to the ledger.
- * @param size The size of the block to allocate in bytes.
- * @return A pointer to the allocated block.
- */
-void* _ledger_alloc(Ledger *ledger, u32 size, u16 flag, bool clean);
-
 /***
  * Allocates a block of memory of the specified size in the ledger without flags.
  * @param ledger A pointer to the ledger.
@@ -139,80 +131,11 @@ bool ledger_reset(Ledger *ledger);
 bool ledger_delete(Ledger *ledger);
 
 /**
- * Checks if a given pointer belongs to the ledger or its child ledgers.
- * @param ledger A pointer to the ledger.
- * @param data_ptr A pointer to check.
- * @return A pointer to the ledger containing the pointer, or NULL if not found.
- */
-Ledger *ledger_contains_this_ptr(Ledger *ledger, void *data_ptr);
-
-/**
- * Finds a free block of sufficient size in the ledger.
- * @param ledger A pointer to the ledger.
- * @param size The size of the block to find in bytes.
- * @return A pointer to the found free block, or NULL if no free block is found.
- */
-void* ledger_find_free_block(Ledger *ledger, u32 size);
-
-/**
- * Merges adjacent free blocks in the ledger into a single larger block.
- * @param ledger A pointer to the ledger.
- * @return true if any blocks were merged, false otherwise.
- */
-bool ledger_merge_free_blocks(Ledger *ledger);
-
-/**
- * Retrieves the metadata structure for a memory block.
- * @param ptr A pointer to the data portion of the memory block.
- * @return A pointer to the metadata associated with the block.
- */
-metadata *ledger_get_block_metadata(void *ptr);
-
-/**
- * Sets the metadata structure for a memory block.
- * @param ptr A pointer to the data portion of the memory block.
- * @param meta A pointer to the metadata to set.
- * @return true if the operation was successful, false otherwise.
- */
-bool ledger_set_block_metadata(void *ptr, metadata *meta);
-
-/**
- * Checks if a block of memory is free.
- * @param ptr A pointer to the data portion of the memory block to check.
- * @return true if the block is free, false otherwise.
- */
-bool ledger_is_block_free(void *ptr);
-
-/**
- * Sets the used status of a block in the ledger.
- * @param ptr A pointer to the data portion of the memory block.
- * @param used A boolean indicating whether the block should be marked as used (true) or free (false).
- * @return true if the operation was successful, false otherwise.
- */
-bool ledger_set_block_used(void *ptr, bool used);
-
-/**
- * Sets the size of a memory block while preserving its status.
- * @param ptr A pointer to the data portion of the memory block.
- * @param new_size The new size to assign to the block.
- * @return true if the operation was successful, false otherwise.
- */
-bool ledger_set_block_size(void *ptr, u32 new_size);
-
-/**
  * Gets the size of an allocated block of memory.
  * @param ptr A pointer to the data portion of the memory block
  * @return The size of the block in bytes.
  */
 u32 ledger_get_block_size(void *ptr);
-
-/**
- * Sets the data size of a memory block.
- * @param ptr A pointer to the data portion of the memory block.
- * @param size The new data size to assign.
- * @return true if the operation was successful, false otherwise.
- */
-bool ledger_set_capacity(void *ptr, u32 size);
 
 /**
  * Retrieves the data size of a memory block.
@@ -260,7 +183,6 @@ u32 ledger_count_flag(Ledger *ledger, u16 flag);
  * @return true if the operation was successful, false otherwise.
  */
 bool ledger_set_lenght(void *ptr, u32 lenght);
-
 
 /**
  * Retrieves the current length of data stored in the block.

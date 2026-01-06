@@ -9,11 +9,12 @@
 */
 
 #include "../include/ledger.h"
+#include "../include/ledger_internal.h"
 #include <stdio.h>
 #include <string.h>
 
 Ledger *
-ledger_contains_this_ptr(Ledger *ledger, void *data_ptr) {
+_ledger_contains_this_ptr(Ledger *ledger, void *data_ptr) {
 	Ledger *current_ledger = ledger;
 	u8 *ptr = (u8 *)data_ptr;
 	while (current_ledger) {
@@ -26,12 +27,12 @@ ledger_contains_this_ptr(Ledger *ledger, void *data_ptr) {
 }
 
 bool
-ledger_set_block_metadata(void *ptr, metadata *meta) {
+_ledger_set_block_metadata(void *ptr, metadata *meta) {
 	if (ptr == NULL || meta == NULL) {
 		fprintf(stderr, "Error: Null pointer received in ledger_set_metadata function.\n");
 		return false;
 	}
-	metadata *current_meta = ledger_get_block_metadata(ptr);
+	metadata *current_meta = _ledger_get_block_metadata(ptr);
 	if (current_meta == NULL) {
 		return false;
 	}
@@ -40,7 +41,7 @@ ledger_set_block_metadata(void *ptr, metadata *meta) {
 }
 
 metadata *
-ledger_get_block_metadata(void *ptr) {
+_ledger_get_block_metadata(void *ptr) {
 	if (ptr == NULL) {
 		fprintf(stderr, "Error: Null pointer received.\n");
 		return NULL;
@@ -49,33 +50,33 @@ ledger_get_block_metadata(void *ptr) {
 }
 
 bool
-ledger_is_block_free(void *ptr) {
+_ledger_is_block_free(void *ptr) {
 	if (ptr == NULL) {
-		fprintf(stderr, "Error: Null pointer received in ledger_is_block_free function.\n");
+		fprintf(stderr, "Error: Null pointer received in _ledger_is_block_free function.\n");
 		return false;
 	}
-	metadata *meta = ledger_get_block_metadata(ptr);
+	metadata *meta = _ledger_get_block_metadata(ptr);
 	return meta->block_used == 0;
 }
 
 bool
-ledger_set_block_used(void *ptr, bool used) {
+_ledger_set_block_used(void *ptr, bool used) {
 	if (ptr == NULL) {
-		fprintf(stderr, "Error: Null pointer received in ledger_set_block_used function.\n");
+		fprintf(stderr, "Error: Null pointer received in _ledger_set_block_used function.\n");
 		return false;
 	}
-	metadata *meta = ledger_get_block_metadata(ptr);
+	metadata *meta = _ledger_get_block_metadata(ptr);
 	meta->block_used = used ? 1 : 0;
 	return true;
 }
 
 bool
-ledger_set_block_size(void *ptr, u32 new_size) {
+_ledger_set_block_size(void *ptr, u32 new_size) {
 	if (ptr == NULL) {
-		fprintf(stderr, "Error: Null pointer received in ledger_set_block_size function.\n");
+		fprintf(stderr, "Error: Null pointer received in _ledger_set_block_size function.\n");
 		return false;
 	}
-	metadata *meta = ledger_get_block_metadata(ptr);
+	metadata *meta = _ledger_get_block_metadata(ptr);
 	meta->block_size = new_size;
 	return true;
 }
@@ -86,7 +87,7 @@ ledger_get_block_size(void *ptr) {
 		fprintf(stderr, "Error: Null pointer received in ledger_get_block_size function.\n");
 		return 0;
 	}
-	metadata *meta = ledger_get_block_metadata(ptr);
+	metadata *meta = _ledger_get_block_metadata(ptr);
 	if (meta->block_size == 0) {
 		fprintf(stderr, "Warning: Block size is zero.\n");
 	}
@@ -94,12 +95,12 @@ ledger_get_block_size(void *ptr) {
 }
 
 bool
-ledger_set_capacity(void *ptr, u32 size) {
+_ledger_set_capacity(void *ptr, u32 size) {
 	if (ptr == NULL) {
-		fprintf(stderr,"Error: Null pointer received in ledger_set_capacity function.\n");
+		fprintf(stderr,"Error: Null pointer received in _ledger_set_capacity function.\n");
 		return false;
 	}
-	metadata *meta = ledger_get_block_metadata(ptr);
+	metadata *meta = _ledger_get_block_metadata(ptr);
 	meta->capacity = size;
 	return true;
 }
@@ -110,14 +111,14 @@ ledger_get_capacity(void *ptr) {
 		fprintf(stderr, "Error: Null pointer received in ledger_get_capacity function.\n");
 		return 0;
 	}
-	metadata *meta = ledger_get_block_metadata(ptr);
+	metadata *meta = _ledger_get_block_metadata(ptr);
 	return meta->capacity;
 }
 
 bool
 ledger_set_lenght(void *ptr, u32 new_lenght) {
 	if (!ptr) return false;
-	metadata *meta = ledger_get_block_metadata(ptr);
+	metadata *meta = _ledger_get_block_metadata(ptr);
 	if (new_lenght <= meta->capacity) {
 		meta->lenght = new_lenght;
 	}else{
@@ -129,20 +130,20 @@ ledger_set_lenght(void *ptr, u32 new_lenght) {
 
 u32
 ledger_get_lenght(void *ptr) {
-	return ptr ? ledger_get_block_metadata(ptr)->lenght : 0;
+	return ptr ? _ledger_get_block_metadata(ptr)->lenght : 0;
 }
 
 bool
 ledger_set_flag(void *ptr, u16 flag) {
 	if (!ptr) return false;
-	metadata *meta = ledger_get_block_metadata(ptr);
+	metadata *meta = _ledger_get_block_metadata(ptr);
 	meta->flag = flag;
 	return true;
 }
 
 u16
 ledger_get_flag(void *ptr) {
-	return ptr ? ledger_get_block_metadata(ptr)->flag : 0;
+	return ptr ? _ledger_get_block_metadata(ptr)->flag : 0;
 }
 
 void *
@@ -153,17 +154,17 @@ ledger_find_flag(Ledger *ledger, void *start_after, u16 flag) {
 	u64 offset = 0;
 
 	if (start_after) {
-		current_page = ledger_contains_this_ptr(ledger, start_after);
+		current_page = _ledger_contains_this_ptr(ledger, start_after);
 		if (!current_page) return NULL;
 		
-		metadata *meta = ledger_get_block_metadata(start_after);
+		metadata *meta = _ledger_get_block_metadata(start_after);
 		offset = ((u8*)start_after - (u8*)current_page->memory - META_SIZE_ALIGNED) + meta->block_size;
 	}
 
 	while (current_page) {
 		while (offset < current_page->offset) {
 			void *data_ptr = current_page->memory + offset + META_SIZE_ALIGNED;
-			metadata *meta = ledger_get_block_metadata(data_ptr);
+			metadata *meta = _ledger_get_block_metadata(data_ptr);
 
 			if (meta->block_used && meta->flag == flag) {
 				return data_ptr;
@@ -188,7 +189,7 @@ ledger_count_flag(Ledger *ledger, u16 flag) {
 }
 
 bool
-ledger_merge_free_blocks(Ledger *ledger) {
+_ledger_merge_free_blocks(Ledger *ledger) {
 	if (!ledger || ledger->offset == 0) return false;
 
 	bool merged_any = false;
@@ -206,13 +207,13 @@ ledger_merge_free_blocks(Ledger *ledger) {
 		u8 *next_block_ptr = block_ptr + block_size;
 		void *next_data_ptr = next_block_ptr + META_SIZE_ALIGNED;
 
-		if (ledger_is_block_free(data_ptr) && ledger_is_block_free(next_data_ptr)) {
+		if (_ledger_is_block_free(data_ptr) && _ledger_is_block_free(next_data_ptr)) {
 			u64 next_block_size = ledger_get_block_size(next_data_ptr);
 			u64 new_merged_size = block_size + next_block_size;
 			
-			ledger_set_block_size(data_ptr, new_merged_size);
+			_ledger_set_block_size(data_ptr, new_merged_size);
 
-			metadata *meta = ledger_get_block_metadata(data_ptr);
+			metadata *meta = _ledger_get_block_metadata(data_ptr);
 			meta->capacity = 0;
 			meta->lenght = 0;
 			
@@ -266,7 +267,7 @@ ledger_create(u64 size) {
 }
 
 bool
-ledger_split_block(Ledger *ledger, void *data_ptr, u32 needed_total_size) {
+_ledger_split_block(Ledger *ledger, void *data_ptr, u32 needed_total_size) {
 	if (!ledger || !data_ptr) {
 		fprintf(stderr, "Error: Invalid ledger or data_ptr for block split.\n");
 		return false;
@@ -277,7 +278,7 @@ ledger_split_block(Ledger *ledger, void *data_ptr, u32 needed_total_size) {
 		return false;
 	}
 
-	if (!ledger_contains_this_ptr(ledger, data_ptr)) {
+	if (!_ledger_contains_this_ptr(ledger, data_ptr)) {
 		fprintf(stderr, "Error: data_ptr does not belong to the provided ledger.\n");
 		return false;
 	}
@@ -289,15 +290,15 @@ ledger_split_block(Ledger *ledger, void *data_ptr, u32 needed_total_size) {
 	if (current_block_size >= min_split_size) {
 		u32 remaining_size = current_block_size - needed_total_size;
 
-		ledger_set_block_size(data_ptr, needed_total_size);
+		_ledger_set_block_size(data_ptr, needed_total_size);
 
-		metadata *current_meta = ledger_get_block_metadata(data_ptr);
+		metadata *current_meta = _ledger_get_block_metadata(data_ptr);
 		u8 *next_block_ptr = (u8 *)current_meta + needed_total_size;
 		void *next_data_ptr = next_block_ptr + META_SIZE_ALIGNED;
 
-		ledger_set_block_size(next_data_ptr, remaining_size);
-		ledger_set_block_used(next_data_ptr, false);
-		ledger_set_capacity(next_data_ptr, 0);
+		_ledger_set_block_size(next_data_ptr, remaining_size);
+		_ledger_set_block_used(next_data_ptr, false);
+		_ledger_set_capacity(next_data_ptr, 0);
 		ledger_set_lenght(next_data_ptr, 0);
 		ledger_set_flag(next_data_ptr, 0);
 
@@ -308,7 +309,7 @@ ledger_split_block(Ledger *ledger, void *data_ptr, u32 needed_total_size) {
 }
 
 void *
-ledger_find_free_block(Ledger *ledger, u32 size) {
+_ledger_find_free_block(Ledger *ledger, u32 size) {
 	Ledger *current = ledger;
 
 	while (current != NULL) {
@@ -318,7 +319,7 @@ ledger_find_free_block(Ledger *ledger, u32 size) {
 			void *data_ptr = block_ptr + META_SIZE_ALIGNED;
 			u32 block_size = ledger_get_block_size(data_ptr);
 
-			if (ledger_is_block_free(data_ptr) && block_size >= size) {
+			if (_ledger_is_block_free(data_ptr) && block_size >= size) {
 				return block_ptr; 
 			}
 
@@ -359,20 +360,20 @@ _ledger_alloc(Ledger *ledger, u32 size, u16 flag, bool clean) {
 		}
 	}
 
-	void *free_block_ptr = ledger_find_free_block(ledger, total_size);
+	void *free_block_ptr = _ledger_find_free_block(ledger, total_size);
 	if (free_block_ptr) {
-		Ledger *target_ledger = ledger_contains_this_ptr(ledger, free_block_ptr);
+		Ledger *target_ledger = _ledger_contains_this_ptr(ledger, free_block_ptr);
 		if (!target_ledger) return NULL;
 
 		void *free_data_ptr = (u8 *)free_block_ptr + META_SIZE_ALIGNED;
 		u32 free_block_size = ledger_get_block_size(free_data_ptr);
 
-		ledger_set_block_used(free_data_ptr, true);
-		ledger_set_capacity(free_data_ptr, (u32)size);
+		_ledger_set_block_used(free_data_ptr, true);
+		_ledger_set_capacity(free_data_ptr, (u32)size);
 		ledger_set_lenght(free_data_ptr, 0);
 		ledger_set_flag(free_data_ptr, flag);
 
-		if (ledger_split_block(target_ledger, free_data_ptr, total_size))
+		if (_ledger_split_block(target_ledger, free_data_ptr, total_size))
 			target_ledger->space -= total_size;
 		else
 			target_ledger->space -= free_block_size;
@@ -398,9 +399,9 @@ _ledger_alloc(Ledger *ledger, u32 size, u16 flag, bool clean) {
 	u8 *block_ptr = ledger->memory + current_offset;
 	void *data_ptr = block_ptr + META_SIZE_ALIGNED;
 	
-	ledger_set_block_size(data_ptr, (u32)total_size);
-	ledger_set_block_used(data_ptr, true);
-	ledger_set_capacity(data_ptr, (u32)size);
+	_ledger_set_block_size(data_ptr, (u32)total_size);
+	_ledger_set_block_used(data_ptr, true);
+	_ledger_set_capacity(data_ptr, (u32)size);
 	ledger_set_lenght(data_ptr, 0);
 	ledger_set_flag(data_ptr, flag);
 
@@ -444,20 +445,20 @@ ledger_realloc(Ledger *ledger, void *ptr, u32 new_size) {
 		return NULL;
 	}
 
-	Ledger *current_ledger = ledger_contains_this_ptr(ledger, ptr);
+	Ledger *current_ledger = _ledger_contains_this_ptr(ledger, ptr);
 	if (!current_ledger) {
 		fprintf(stderr, "Error: ptr does not belong to this ledger chain.\n");
 		return NULL;
 	}
 
-	metadata *meta = ledger_get_block_metadata(ptr);
+	metadata *meta = _ledger_get_block_metadata(ptr);
 	u32 old_lenght = meta->lenght;
 	u32 old_capacity = meta->capacity;
 	u32 current_total_block_size = meta->block_size;
 	u32 needed_total_size = LEDGER_ALIGN_UP(new_size + META_SIZE_ALIGNED);
 
 	if (needed_total_size <= current_total_block_size) {
-		ledger_set_capacity(ptr, (u32)new_size);
+		_ledger_set_capacity(ptr, (u32)new_size);
 		if (meta->lenght > meta->capacity) {
 			meta->lenght = meta->capacity;
 		}
@@ -470,8 +471,8 @@ ledger_realloc(Ledger *ledger, void *ptr, u32 new_size) {
 		if (current_ledger->offset + extra_needed <= current_ledger->size) {
 			current_ledger->offset += extra_needed;
 			current_ledger->space -= extra_needed;
-			ledger_set_block_size(ptr, needed_total_size);
-			ledger_set_capacity(ptr, (u32)new_size);
+			_ledger_set_block_size(ptr, needed_total_size);
+			_ledger_set_capacity(ptr, (u32)new_size);
 			return ptr;
 		}
 	}
@@ -482,9 +483,9 @@ ledger_realloc(Ledger *ledger, void *ptr, u32 new_size) {
 			
 			u32 combined_size = current_total_block_size + next_meta->block_size;
 			
-			ledger_set_block_size(ptr, combined_size);
+			_ledger_set_block_size(ptr, combined_size);
 
-			if (ledger_split_block(current_ledger, ptr, needed_total_size)) {
+			if (_ledger_split_block(current_ledger, ptr, needed_total_size)) {
 				current_ledger->space -= (needed_total_size - current_total_block_size);
 			} else {
 				current_ledger->space -= next_meta->block_size;
@@ -492,7 +493,7 @@ ledger_realloc(Ledger *ledger, void *ptr, u32 new_size) {
 
 			u32 block_growth = ledger_get_block_size(ptr) - current_total_block_size;
 			memset(block_end, 0, block_growth);
-			ledger_set_capacity(ptr, (u32)new_size);
+			_ledger_set_capacity(ptr, (u32)new_size);
 
 			if (meta->lenght > meta->capacity) meta->lenght = meta->capacity;
 			
@@ -505,7 +506,7 @@ ledger_realloc(Ledger *ledger, void *ptr, u32 new_size) {
 	if (new_ptr) {
 		u32 copy_size = (old_capacity < new_size) ? old_capacity : new_size;
 		memcpy(new_ptr, ptr, copy_size);
-		metadata *new_meta = ledger_get_block_metadata(new_ptr);
+		metadata *new_meta = _ledger_get_block_metadata(new_ptr);
 		new_meta->lenght = (old_lenght < (u32)new_size) ? old_lenght : (u32)new_size;
 		ledger_free(ledger, ptr);
 	}
@@ -524,26 +525,26 @@ ledger_free(Ledger *ledger, void *ptr) {
 		return true;
 	}
 
-	Ledger *current_ledger = ledger_contains_this_ptr(ledger, ptr);
+	Ledger *current_ledger = _ledger_contains_this_ptr(ledger, ptr);
 	if (!current_ledger) {
 		fprintf(stderr, "Error: Pointer does not belong to this ledger chain.\n");
 		return false;
 	}
 
-	if (ledger_is_block_free(ptr)) {
+	if (_ledger_is_block_free(ptr)) {
 		fprintf(stderr, "Warning: Double free detected at %p. Operation ignored.\n", ptr);
 		return false; 
 	}
 
 	u32 block_size = ledger_get_block_size(ptr);
-	ledger_set_capacity(ptr, 0);
-	ledger_set_block_used(ptr, false);
+	_ledger_set_capacity(ptr, 0);
+	_ledger_set_block_used(ptr, false);
 	ledger_set_lenght(ptr, 0);
 	ledger_set_flag(ptr, 0);
 	current_ledger->space += block_size;
 	current_ledger->free_count++;
 	if (current_ledger->free_count == MAX_FREE_COUNT) {
-		ledger_merge_free_blocks(current_ledger);
+		_ledger_merge_free_blocks(current_ledger);
 		current_ledger->free_count = 0;
 	}
 	return true;
@@ -599,7 +600,7 @@ ledger_print(Ledger *ledger, bool content) {
 			void *data_ptr = (u8 *)block_ptr + META_SIZE_ALIGNED;
 			u64 block_size = ledger_get_block_size(data_ptr);
 			u64 capacity = ledger_get_capacity(data_ptr);
-			bool free = ledger_is_block_free(data_ptr);
+			bool free = _ledger_is_block_free(data_ptr);
 			printf("| Block at %p: capacity = %llu, block_size = %llu, block_status = %s, content = ", block_ptr, capacity, block_size, free ? "free" : "used");
 			for (u64 i = 0; i < block_size - META_SIZE_ALIGNED; i++) {
 				printf("%02x ", ((u8 *)data_ptr)[i]);
@@ -644,7 +645,7 @@ ledger_dump(Ledger *ledger) {
 			u8 *block_base = current->memory + current_offset;
 			void *data_ptr = block_base + META_SIZE_ALIGNED;
 			
-			metadata *meta = ledger_get_block_metadata(data_ptr);
+			metadata *meta = _ledger_get_block_metadata(data_ptr);
 			if (!meta || meta->block_size == 0) break;
 
 			bool is_free = (meta->block_used == 0);

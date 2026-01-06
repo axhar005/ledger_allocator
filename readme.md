@@ -69,14 +69,14 @@ When adjacent blocks are freed, they automatically merge to reduce fragmentation
 BEFORE MERGE:
 +--------+--------+--------+--------+--------+
 | Used   | FREE   | FREE   | FREE   | Used   |
-|  16B   |  32B   |  32B   |  48B   |  64B   |
+|  64B   |  32B   |  32B   |  48B   |  64B   |
 +--------+--------+--------+--------+--------+
 
 AFTER MERGE (automatic after MAX_FREE_COUNT frees):
-+--------+--------+--------+
++--------+--------+--------+--------+
 | Used   |   FREE (112B)   | Used   |
-|  16B   |                 |  64B   |
-+--------+--------+--------+
+|  64B   |                 |  64B   |
++--------+--------+--------+--------+
 ```
 
 ## Features
